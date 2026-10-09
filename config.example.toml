@@ -1,0 +1,105 @@
+# cometseed configuration
+#
+# Every option is listed here with its default. Only [[network]] entries with
+# a laddr and a chain_id (or chain_registry) are required; everything else can
+# be left out.
+
+# Directory for the per-network node keys and address books
+# (<home>/<network name>/node_key.json and addrbook.json).
+home = "~/.cometseed"
+
+# Log level: "debug", "info" or "error", globally or per module in the CometBFT
+# syntax "module:level,*:level". The default keeps the p2p internals quiet;
+# use "info" or "debug" to see every connection.
+log_level = "p2p:none,addrbook:error,pex:error,*:info"
+
+# Log format: "plain" or "json".
+log_format = "plain"
+
+# Optional HTTP server with:
+#   /status   JSON status of every network
+#   /metrics  Prometheus metrics
+#   /healthz  200 when every network has a non-empty address book
+# Empty disables it. Keep it on localhost or behind a proxy.
+[http]
+listen = ""            # e.g. "127.0.0.1:26680"
+
+# Source of the chain registry entries used by `chain_registry` below.
+# Any mirror of github.com/cosmos/chain-registry with the same layout works.
+[chain_registry]
+url = "https://raw.githubusercontent.com/cosmos/chain-registry/master"
+timeout = "20s"
+
+# Defaults for every network. Each [[network]] can override any of them.
+[defaults]
+max_inbound = 1000             # inbound connections accepted
+max_outbound = 30              # outbound connections used by the crawler
+bootstrap_interval = "30m"     # refresh the address book from the bootstrap sources ("0s" disables)
+bootstrap_rpc_timeout = "15s"  # timeout of each /net_info request
+addr_book_strict = true        # keep only routable (public) addresses
+allow_duplicate_ip = true      # allow several peers behind the same IP
+seed_disconnect_wait = "28h"   # how long the crawler waits before re-dialing a crawled peer
+send_rate = 5120000            # bytes/s per connection
+recv_rate = 5120000            # bytes/s per connection
+registry_seeds = true          # with chain_registry: use its seeds
+registry_peers = true          # with chain_registry: use its persistent peers
+registry_rpc = true            # with chain_registry: read /net_info of its RPC endpoints
+registry_max_rpc = 5           # with chain_registry: how many of its RPC endpoints to use
+
+# One [[network]] per chain. Each network needs its own laddr port and gets its
+# own node key: the seed address to publish is <node id>@<external_address>
+# (print it with `cometseed node-ids`).
+
+[[network]]
+# Name of the network directory under home and in logs and metrics.
+# Defaults to chain_id, or to chain_registry when chain_id is not set.
+name = "chihuahua"
+
+# Set to false to keep the entry without serving it.
+enabled = true
+
+# Chain id announced in the p2p handshake. Nodes of other chains are rejected.
+# Optional when chain_registry is set: it is then read from the registry, and
+# when both are set they must match.
+chain_id = "chihuahua-1"
+
+# Chain registry path of the chain ("chihuahua", "cosmoshub", "testnets/cosmoshubtestnet").
+# Used to fill chain_id and to bootstrap from the registry seeds, peers and RPCs.
+chain_registry = "chihuahua"
+
+# p2p listen address. Each network needs its own port.
+laddr = "tcp://0.0.0.0:26666"
+
+# Public host:port advertised to peers (what nodes put in their seeds).
+external_address = ""          # e.g. "seed.chihuahua.wtf:26666"
+
+# Moniker shown to peers.
+moniker = "cometseed"
+
+# Paths of the node key and the address book. Default: under <home>/<name>/.
+# Point node_key_file at an existing node_key.json to keep a seed id.
+node_key_file = ""
+addr_book_file = ""
+
+# Protocol versions in the handshake. Peers must have the same block version.
+# The defaults fit CometBFT 0.34, 0.37, 0.38 and later; change them only for
+# chains on a fork with different versions.
+block_version = 11
+p2p_version = 8
+app_version = 0
+
+# Extra bootstrap sources, on top of the registry ones.
+seeds = []                     # other seeds, "id@host:port"
+peers = []                     # known peers, "id@host:port"
+bootstrap_rpc = []             # RPC endpoints whose /net_info lists peers, e.g. "http://127.0.0.1:26657"
+
+# Any [defaults] option can be overridden here, e.g.:
+# max_inbound = 2000
+# registry_rpc = false
+
+# A second network only needs a port and a registry name:
+#
+# [[network]]
+# chain_registry = "cosmoshub"
+# laddr = "tcp://0.0.0.0:26667"
+# external_address = "seed.chihuahua.wtf:26667"

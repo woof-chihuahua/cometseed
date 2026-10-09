@@ -1,0 +1,17 @@
+# systemd user unit: copy to ~/.config/systemd/user/ and run
+#   systemctl --user enable --now cometseed
+# (enable lingering with `loginctl enable-linger <user>` so it runs without a login).
+# For a system unit, copy to /etc/systemd/system/, set User= and use absolute paths.
+[Unit]
+Description=cometseed - stateless CometBFT seed node
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=%h/cometseed/bin/cometseed -config %h/cometseed/config.toml
+Restart=always
+RestartSec=10
+LimitNOFILE=65536
+
+[Install]
+WantedBy=default.target
