@@ -54,6 +54,11 @@ func main() {
 	cmd := "start"
 	if fs.NArg() > 0 {
 		cmd = fs.Arg(0)
+		// global flags are also accepted after the command (cometseed version -no-banner),
+		// except for service, which has flags of its own
+		if cmd != "service" {
+			_ = fs.Parse(fs.Args()[1:])
+		}
 	}
 	var err error
 	switch cmd {

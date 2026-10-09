@@ -1,0 +1,30 @@
+# cometseed with Docker Compose.
+#
+#   docker build -t cometseed .                 # in the cometseed source tree
+#   cp deploy/docker-compose.yml <dir>/ && cp deploy/config.docker.toml <dir>/config.toml
+#   cd <dir> && $EDITOR config.toml && docker compose up -d && docker compose logs -f
+#
+# Publish one port per [[network]] (its laddr), and keep `home = "/data"` in
+# config.toml so the node keys survive container upgrades.
+services:
+  cometseed:
+    image: cometseed
+    container_name: cometseed
+    restart: unless-stopped
+    ports:
+      - "26666:26666"               # chihuahua-1
+      - "26667:26667"               # cosmoshub-4
+      - "127.0.0.1:26680:26680"     # /status, /metrics, /healthz (localhost only)
+    volumes:
+      - ./config.toml:/config/config.toml:ro
+      - cometseed-data:/data
+    ulimits:
+      nofile: 65536
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  cometseed-data:

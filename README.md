@@ -15,6 +15,7 @@ state, so one small process can serve any number of chains, each on its own port
   (seeds, persistent peers and the `/net_info` of the listed RPCs), from your own nodes'
   `/net_info`, or from fixed peers and seeds.
 - **systemd in one command**: `cometseed service install` / `update` / `uninstall`.
+- **Docker**: an 18 MB distroless image running as an unprivileged user, with a Compose example.
 - **Monitoring**: optional `/status` (JSON), `/metrics` (Prometheus) and `/healthz`.
 
 ## Contents
@@ -23,6 +24,7 @@ state, so one small process can serve any number of chains, each on its own port
 - [Quick start](#quick-start)
 - [Configuration](#configuration)
 - [Run as a systemd service](#run-as-a-systemd-service)
+- [Run with Docker](#run-with-docker)
 - [Publish the seed](#publish-the-seed)
 - [Monitoring](#monitoring)
 - [Commands](#commands)
@@ -160,6 +162,48 @@ system unit).
 
 [`deploy/cometseed.service`](deploy/cometseed.service) is a hand-written user unit, if you
 prefer to manage it yourself.
+
+## Run with Docker
+
+Build the image (static binary on `distroless/static`, user `nonroot`, about 18 MB):
+
+```sh
+docker build -t cometseed --build-arg VERSION=$(git describe --tags --always) .
+```
+
+With Docker Compose, after building the image, from an empty directory:
+
+```sh
+cp /path/to/cometseed/deploy/docker-compose.yml .
+cp /path/to/cometseed/deploy/config.docker.toml config.toml
+$EDITOR config.toml docker-compose.yml     # networks, external_address, published ports
+docker compose up -d
+docker compose logs -f
+docker compose exec cometseed cometseed node-ids
+```
+
+[`deploy/config.docker.toml`](deploy/config.docker.toml) serves chihuahua-1 on 26666 and
+cosmoshub-4 on 26667. In the container:
+
+- keep `home = "/data"`: the node keys and address books live on the `cometseed-data`
+  volume and survive upgrades and re-creates;
+- publish one port per `[[network]]`, matching its `laddr`;
+- the HTTP server listens on `0.0.0.0:26680` inside the container and Compose publishes it on
+  the host's `127.0.0.1` only.
+
+Plain `docker run`:
+
+```sh
+docker run -d --name cometseed --restart unless-stopped \
+  -p 26666:26666 -p 26667:26667 -p 127.0.0.1:26680:26680 \
+  -v $PWD/config.toml:/config/config.toml:ro -v cometseed-data:/data \
+  cometseed
+```
+
+The image reads `/config/config.toml` (`COMETSEED_CONFIG`) and runs `start`; any other
+command works too, e.g. `docker run --rm cometseed example-config > config.toml`.
+To keep an existing seed id, copy its `node_key.json` into the volume under
+`<network name>/node_key.json`, owned by uid 65532.
 
 ## Publish the seed
 

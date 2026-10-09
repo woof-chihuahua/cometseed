@@ -1,0 +1,21 @@
+# cometseed configuration for the container (see config.example.toml for every option).
+
+# Node keys and address books: keep it on the /data volume.
+home = "/data"
+
+# Inside a container the HTTP server must listen on all interfaces;
+# docker-compose.yml publishes it on the host's localhost only.
+[http]
+listen = "0.0.0.0:26680"
+
+[[network]]
+name = "chihuahua"
+chain_registry = "chihuahua"
+laddr = "tcp://0.0.0.0:26666"
+external_address = "seed.chihuahua.wtf:26666"
+
+[[network]]
+name = "cosmoshub"
+chain_registry = "cosmoshub"
+laddr = "tcp://0.0.0.0:26667"
+external_address = "seed.chihuahua.wtf:26667"
